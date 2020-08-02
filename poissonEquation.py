@@ -1,76 +1,84 @@
-import subprocess as sp
-import os
-import shutil
-import datetime
-import random
-import time
-import json
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
-from flask import flash, Flask, render_template, request, redirect, url_for, send_file, after_this_request
+from flask import flash, Flask, render_template, request, Blueprint
 
-app = Flask(__name__)
+# Only single run
+poissonEquation = Flask(__name__)
+
+# To connect HobbyLab
+# poissonEquation = Blueprint('poissonEquation', __name__, template_folder='templates', static_folder='./static')
 
 # ----------------------------------------------------------------------
 # トップページ
 # ----------------------------------------------------------------------
-@app.route('/')
+@poissonEquation.route('/')
 def index():
+    # htmlの表示
     return render_template(
-        'index.html',
+        'poissonEquation/index.html',
         title="Poisson equation calculator",
-        X=10,
-        Y=10
+        Xnum=10,
+        Ynum=10,
+        dd_list=[]
     )
 
 
 # ----------------------------------------------------------------------
-# 実行
+# 計算実行と結果表示
 # ----------------------------------------------------------------------
-@app.route("/run", methods=['POST'])
+@poissonEquation.route("/run", methods=['POST'])
 def run():
-    if request.environ.get('wsgi.websocket'):
-        ws = request.environ['wsgi.websocket']
+    # 結果を格納するリスト
+    __u = []
 
-        __u = []
-        column = int(request.form["Y"]) # y方向
+    # 分割数の取得
+    column = int(request.form["Ynum"]) # y方向
+    row = int(request.form["Xnum"]) # x方向
 
-        row = int(request.form["X"]) # x方向
+    # uは現在の結果､wはひとつ前の結果
+    u = [[] for i in range(column)]
+    w = [[] for i in range(column)]
 
-        # uは現在の結果､wはひとつ前の結果
-        u = [[] for i in range(column)]
-        w = [[] for i in range(column)]
+    # u,wを初期化
+    for i in range(column):
+        for j in range(row):
+            u[i].append(0.0)
+            w[i].append(0.0)
 
-        # u,wを初期化
-        for i in range(column):
-            for j in range(row):
-                u[i].append(0.0)
-                w[i].append(0.0)
+    # 温度入力辺に温度を定義
+    for i in range(1, column-1):
+        u[i][row-1] = float(request.form["temperature"])
 
+    # ガウスザイデル法
+    dd = 9999 # ddI±残差
+    count = 0
+    dd_list = []
+    while dd > 0.001:
+        count += 1
+        dd = 0.0
         for i in range(1, column-1):
-            u[i][row-1] = float(request.form["temperature"])
+            for j in range(1, row-1):
+                u1 = u[i+1][j] + u[i-1][j]
+                u2 = u[i][j+1] + u[i][j-1]
+                u[i][j] = (u1 + u2) / 4.0
+                dd += abs(w[i][j] - u[i][j])
+                w[i][j] = u[i][j]
+        dd_list.append([count, dd])
+    __u = u
 
-        dd = 9999 # ddI±残差
-        while dd > 0.001:
-            dd = 0.0
-            for i in range(1, column-1):
-                for j in range(1, row-1):
-                    u1 = u[i+1][j] + u[i-1][j]
-                    u2 = u[i][j+1] + u[i][i-1]
-                    u[i][j] = (u1 + u2) / 4.0
-                    dd += abs(w[i][j] - u[i][j])
-                    w[i][j] = u[i][j]
-                    ws.send(json.dumps([{"time": t, "y": dd}]))
-                    time.sleep(1)
-            # printResidual(dd)
-        __u = u
-    return
+    # 結果の表示
+    return render_template(
+        'poissonEquation/result.html',
+        title="Poisson equation calculator",
+        Xnum=10,
+        Ynum=10,
+        dd_list=dd_list,
+        temp_data=__u
+    )
 
 
 # ----------------------------------------------------------------------
 # メインルーチン
 # ----------------------------------------------------------------------
 if __name__ == '__main__':
-    app.debug = True
-    server = pywsgi.WSGIServer(('localhost', 8000), app, handler_class=WebSocketHandler)
-    server.serve_forever()
+    poissonEquation.debug = True
+    poissonEquation.run(host='localhost', port=12081,
+        debug=True, use_reloader=True, use_debugger=False)

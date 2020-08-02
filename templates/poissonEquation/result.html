@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- タイトル表示 -->
+        <title>{{ title }}</title>
+        <!-- Bootstrapのインポート -->
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <!-- 計算結果プロット用 -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <!-- 残差プロット用 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+    </head>
+    <body>
+        <!-- ページ上部のナビゲーションバーの表示 -->
+        <nav class="navbar navbar-dark bg-dark navbar-expand-sm">
+            <a href="/" class="navbar-brand">Poisson equation calculator</a>
+        </nav>
+        <!-- 計算結果のプロット -->
+        <h3>Calculation Result</h3><br>
+        <!-- 結果をプロットする領域 -->
+        <div id="myDiv" style="width:480px; height:400px;"></div>
+        <!-- 結果プロット用のjs -->
+        <script>
+            var data = [
+                {
+                    z: {{ temp_data }},
+                    type: 'surface'
+                }
+            ];
+            var layout = {
+                title: 'Temperature map',
+                autosize: false,
+                scene: {
+                    zaxis: {
+                        title: 'Temperature ℃'
+                    }
+                }
+            };
+            Plotly.newPlot('myDiv', data, layout);
+        </script>
+        <br>
+        <!-- hrは区切り線を引きます -->
+        <hr>
+        <!-- 残差プロット -->
+        <h3>Residial Plot</h3><br>
+        <!-- 残差をプロットする領域 -->
+        <canvas id="myChart"></canvas>
+        <!-- 残差をプロットするjs -->
+        <script>
+            var ctx = document.getElementById("myChart");
+            var chart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                    label: 'Residual',
+                    data: [
+                        {% for dd_data in dd_list %}
+                            { x: {{ dd_data[0] }}, y: {{ dd_data[1] }} },
+                        {% endfor %}
+                    ],
+                    fill: false,
+                    showLine: true
+                    }]
+                },
+                options:{
+                    title: {
+                        display: true,
+                        text: 'Residual Plot'
+                    },
+                    scales: {
+                        xAxes: [{        
+                        scaleLabel: {             
+                            display: true,          
+                            labelString: 'Iteration' 
+                        },
+                        ticks: {
+                            suggestedMin: 0,
+                            suggestedMax: 100,
+                            stepSize: 10,
+                            callback: function(value, index, values){
+                            return  value
+                            }
+                        }
+                        }],
+                        yAxes: [{        
+                        scaleLabel: {             
+                            display: true,          
+                            labelString: 'Residual' 
+                        },
+                        type: 'logarithmic',
+                        position: 'left',
+                        ticks: {
+                            min: 0.001, //minimum tick
+                            max: 1000, //maximum tick
+                            callback: function (value, index, values) {
+                                return Number(value.toString());//pass tick values as a string into Number function
+                            }
+                        },
+                        afterBuildTicks: function (chartObj) { //Build ticks labelling as per your need
+                            chartObj.ticks = [];
+                            chartObj.ticks.push(0.001);
+                            chartObj.ticks.push(0.01);
+                            chartObj.ticks.push(0.1);
+                            chartObj.ticks.push(1);
+                            chartObj.ticks.push(10);
+                            chartObj.ticks.push(100);
+                            chartObj.ticks.push(1000);
+                        }
+                        }]
+                    }
+                }
+            });
+        </script>
+        <hr>
+        <a href="/" >Return calculation page</a><br>
+        <!-- タブの外でトップページへのリンクをおいてます。 -->
+        <!-- <a href="/" >Return top page</a> -->
+    </body>
+</html>

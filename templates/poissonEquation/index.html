@@ -2,30 +2,23 @@
 <html lang="ja">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- タイトル表示 -->
-        {% if title %}
         <title>{{ title }}</title>
-        {% else %}
-        <title>Bootstrap 101 Template</title>
-        {% endif %}
         <!-- Bootstrapのインポート -->
         <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+        <!-- 残差プロット用 -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+        <!-- 計算結果プロット用 -->
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     </head>
     <body>
+        <!-- ページ上部のナビゲーションバーの表示 -->
         <nav class="navbar navbar-dark bg-dark navbar-expand-sm">
             <a href="/" class="navbar-brand">Poisson equation calculator</a>
         </nav>
-        <!-- 必要なjavascript -->
-        <script src="static/js/inputControls.js"></script>
-        <script src="https://d3js.org/d3.v5.min.js"></script>
-        <script src="static/js/epoch-0.8.4/dist/js/epoch.min.js"></script>
-        <link rel="stylesheet" type="text/css" href="static/js/epoch-0.8.4/dist/css/epoch.min.css">
-        <!-- <script src="/static/js/jquery.js"></script> -->
         <!-- Bootstrapの大外枠 -->
         <div class="container">
             <!--  -->
@@ -50,30 +43,24 @@
                                 <input type="text" name="temperature" value={{ temperature }}><br>
                                 <!-- 分割数をデフォルトとするか手入力とするか -->
                                 <label for="partitionType">partition type</label>
+                                <!-- デフォルトのx=10、y=10を使う -->
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="radio1" id="radio1a" checked>
                                     <label class="form-check-label" for="radio1a">Default</label>
                                 </div>
+                                <!-- ユーザー入力とする -->
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="radio1" id="radio1b">
                                     <label class="form-check-label" for="radio1b">Custom</label>
                                 </div>
-                                <!-- 分割数 -->
-                                <label for="Input Temperature(degree Celsius)">X</label>
-                                <input type="text" id="X" name="X" value={{ X }}><br>
-                                <label for="Input Temperature(degree Celsius)">Y</label>
-                                <input type="text" id="Y" name="Y" value={{ Y }}><br>
-                                <!-- 結果ファイル出力 -->
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="check1a" checked>
-                                    <label class="form-check-label" for="check1a">Result output</label>
-                                </div>
+                                <!-- 分割数ユーザー入力ボックス -->
+                                <label for="Xnum">X</label>
+                                <input type="text" id="Xnum" name="Xnum" value={{ Xnum }}><br>
+                                <label for="Ynum">Y</label>
+                                <input type="text" id="Ynum" name="Ynum" value={{ Ynum }}><br>
                                 <!-- 計算実行 -->
                                 <button name="runCalc" type="submit" class="btn btn-primary btn-lg">Run
                                 </button>
-                            </div>
-                            <div class="col-md-8" id="main">
-                                <div id="graph" class="epoch" style="height: 200px;"></div>
                             </div>
                         </div>
                     </div>
@@ -82,36 +69,9 @@
             <!-- hrは区切り線を引きます -->
             <hr>
             <!-- タブの外でトップページへのリンクをおいてます。 -->
-            <!-- <a href="/" >Return top page</a> -->
+            <a href="/" >Return top page</a>
         </div>
-        <script type="text/javascript">
-            var ws = new WebSocket("ws://localhost:12081/run");
-            var data = [
-                { label: "Series 1", values: [] },
-              ];
-            var lineChart = $('#graph').epoch({
-              type: 'time.line',
-              data: data,
-              axes: ['left', 'right', 'bottom']
-            });
-            ws.onmessage = function(msg) {
-              var current = JSON.parse(msg.data);
-              lineChart.push(current);
-            };
-        </script>
-
-
-        <div id="area" class="epoch category10" style="height: 200px;"></div>
-        <script type="text/javascript">
-        var data = [
-        { label: 'Layer 1', values: [ {x: 0, y: 0}, {x: 1, y: 1}, {x: 2, y: 2} ] },
-        { label: 'Layer 2', values: [ {x: 0, y: 0}, {x: 1, y: 1}, {x: 2, y: 4} ] }
-        ];
-        var areaChartInstance = $('#area').epoch({
-            type: 'area',
-            data: data,
-            axes: ['left', 'right', 'bottom']
-        });
-        </script>
+        <!-- インプットコントロール用JS -->
+        <script src="static/js/inputControls.js"></script>
     </body>
 </html>
